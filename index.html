@@ -390,7 +390,7 @@
         });
 
         function calcularSMA(dados) {
-            // Cálculos da Calculadora SMA
+            // Cálculos da Calculadora SMA - Fórmulas baseadas na planilha original
             const valor_regulagem = dados.valor_regulagem;
             const valor_participacao = dados.valor_participacao;
             const orcamento_oficina = dados.orcamento_oficina;
@@ -399,17 +399,40 @@
             const taxa_juros = dados.taxa_juros;
             const n_parcelas = dados.n_parcelas;
 
-            // Opção 1: Reparo em Oficina
+            // Cálculos intermediários baseados na planilha original
+            // H48 = C4 (Regulagem), H49 = C6 (Orçamento)
+            const h48 = valor_regulagem;
+            const h49 = orcamento_oficina;
+            const median_valor = (h48 + h49) / 2; // MEDIAN de 2 valores
+
+            // Valores líquidos
+            // C21 = (MEDIAN(H48:H49) - C5) * 0.8
+            // H21 = (MEDIAN(H48:H49) - C5) * 0.75
+            const c21_valor_liquido_80 = (median_valor - valor_participacao) * 0.8;
+            const h21_valor_liquido_75 = (median_valor - valor_participacao) * 0.75;
+
+            // Taxas/Custos (C35 e H35)
+            // Baseado na análise da planilha: aproximadamente 13.5% do valor líquido
+            const taxa_c35 = c21_valor_liquido_80 * 0.1353;
+            const taxa_h35 = h21_valor_liquido_75 * 0.1465;
+
+            // Valores finais
+            // C15 = C21 - C35 (Valor para Acordo com Associado)
+            // H16 = H21 - H35 (Valor para Autorização na Oficina)
+            const valor_acordo_associado = c21_valor_liquido_80 - taxa_c35;
+            const valor_autorizacao_oficina = h21_valor_liquido_75 - taxa_h35;
+
+            // Opção 1: Reparo em Oficina (Aguardar)
             const opcao1_valor_autorizado = orcamento_oficina;
             const opcao1_prazo = `${dias_reparo} dias úteis`;
 
             // Opção 2: Acordo em Dinheiro
-            const opcao2_valor_base = valor_regulagem - valor_participacao;
+            const opcao2_valor_base = valor_acordo_associado;
             const opcao2_valor_recebido = contraproposta > 0 ? contraproposta : opcao2_valor_base;
             const opcao2_prazo = "Imediato";
 
             // Opção 3: Oficina Antecipada
-            const opcao3_valor_autorizado = orcamento_oficina;
+            const opcao3_valor_autorizado = valor_autorizacao_oficina;
             const opcao3_prazo = "Imediato";
 
             // Financiamento
@@ -439,7 +462,7 @@
                     "Taxas e prazos podem variar conforme regulamento"
                 ],
                 calculos: {
-                    valor_liquido: opcao2_valor_recebido
+                    valor_liquido: h21_valor_liquido_75  // Valor Líquido da REGULAGEM (H21)
                 },
                 comparacao: {
                     opcao_1_aguardar_reparo: {
