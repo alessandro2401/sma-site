@@ -434,10 +434,17 @@
             }
 
             return {
+                observacoes: [
+                    "Cálculo baseado nos valores informados",
+                    "Taxas e prazos podem variar conforme regulamento"
+                ],
+                calculos: {
+                    valor_liquido: opcao2_valor_recebido
+                },
                 comparacao: {
-                    opcao_1_reparo_oficina: {
-                        valor_autorizado: opcao1_valor_autorizado,
+                    opcao_1_aguardar_reparo: {
                         prazo: opcao1_prazo,
+                        custo: valor_participacao,
                         vantagens: ["Veículo reparado", "Sem desembolso imediato"],
                         desvantagens: ["Aguardar reparo", "Sem dinheiro em mãos"]
                     },
@@ -453,7 +460,7 @@
                     },
                     recomendacao: opcao2_valor_recebido > opcao1_valor_autorizado * 0.8 ? 
                         "Opção 2 (Acordo em Dinheiro) oferece melhor custo-benefício" : 
-                        "Opção 1 (Reparo em Oficina) é mais vantajosa"
+                        "Opção 1 (Aguardar Reparo) é mais vantajosa"
                 },
                 acordo_associado: {
                     financiamento: {
