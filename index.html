@@ -382,23 +382,91 @@
             };
 
             try {
-                const response = await fetch('/api/calcular-sma', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dados)
-                });
-
-                const result = await response.json();
-                
-                if (response.ok) {
-                    exibirResultado(result);
-                } else {
-                    alert('Erro: ' + result.erro);
-                }
+                const result = calcularSMA(dados);
+                exibirResultado(result);
             } catch (error) {
                 alert('Erro ao calcular: ' + error.message);
             }
         });
+
+        function calcularSMA(dados) {
+            // Cálculos da Calculadora SMA
+            const valor_regulagem = dados.valor_regulagem;
+            const valor_participacao = dados.valor_participacao;
+            const orcamento_oficina = dados.orcamento_oficina;
+            const dias_reparo = dados.dias_reparo;
+            const contraproposta = dados.contraproposta || 0;
+            const taxa_juros = dados.taxa_juros;
+            const n_parcelas = dados.n_parcelas;
+
+            // Opção 1: Reparo em Oficina
+            const opcao1_valor_autorizado = orcamento_oficina;
+            const opcao1_prazo = `${dias_reparo} dias úteis`;
+
+            // Opção 2: Acordo em Dinheiro
+            const opcao2_valor_base = valor_regulagem - valor_participacao;
+            const opcao2_valor_recebido = contraproposta > 0 ? contraproposta : opcao2_valor_base;
+            const opcao2_prazo = "Imediato";
+
+            // Opção 3: Oficina Antecipada
+            const opcao3_valor_autorizado = orcamento_oficina;
+            const opcao3_prazo = "Imediato";
+
+            // Financiamento
+            const valor_operacao = opcao2_valor_recebido;
+            const taxa_mensal_pct = taxa_juros * 100;
+            const valor_parcela = valor_operacao * (taxa_juros * Math.pow(1 + taxa_juros, n_parcelas)) / (Math.pow(1 + taxa_juros, n_parcelas) - 1);
+            const total_geral = valor_parcela * n_parcelas;
+            const custo_financeiro = total_geral - valor_operacao;
+            const percentual_custo = (custo_financeiro / valor_operacao) * 100;
+
+            // Gerar parcelas
+            const parcelas = [];
+            const hoje = new Date();
+            for (let i = 1; i <= n_parcelas; i++) {
+                const vencimento = new Date(hoje);
+                vencimento.setMonth(vencimento.getMonth() + i);
+                parcelas.push({
+                    numero: i,
+                    vencimento: vencimento.toLocaleDateString('pt-BR'),
+                    valor: valor_parcela
+                });
+            }
+
+            return {
+                comparacao: {
+                    opcao_1_reparo_oficina: {
+                        valor_autorizado: opcao1_valor_autorizado,
+                        prazo: opcao1_prazo,
+                        vantagens: ["Veículo reparado", "Sem desembolso imediato"],
+                        desvantagens: ["Aguardar reparo", "Sem dinheiro em mãos"]
+                    },
+                    opcao_2_acordo_dinheiro: {
+                        valor_recebido: opcao2_valor_recebido,
+                        prazo: opcao2_prazo,
+                        vantagens: ["Dinheiro imediato", "Liberdade de escolha"],
+                        desvantagens: ["Valor pode ser menor", "Responsabilidade pelo reparo"]
+                    },
+                    opcao_3_oficina_antecipada: {
+                        valor_autorizado: opcao3_valor_autorizado,
+                        prazo: opcao3_prazo
+                    },
+                    recomendacao: opcao2_valor_recebido > opcao1_valor_autorizado * 0.8 ? 
+                        "Opção 2 (Acordo em Dinheiro) oferece melhor custo-benefício" : 
+                        "Opção 1 (Reparo em Oficina) é mais vantajosa"
+                },
+                acordo_associado: {
+                    financiamento: {
+                        valor_operacao: valor_operacao,
+                        taxa_mensal_pct: taxa_mensal_pct,
+                        total_geral: total_geral,
+                        custo_financeiro: custo_financeiro,
+                        percentual_custo: percentual_custo,
+                        parcelas: parcelas
+                    }
+                }
+            };
+        }
 
         function exibirResultado(result) {
             resultado.classList.add('show');
