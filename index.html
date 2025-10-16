@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora SMT - Movimento Mais Brasil</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e5799 0%, #2989d8 50%, #7db9e8 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #1e5799;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #1e5799;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #2989d8;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-section h3 {
+            color: #2989d8;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background: #2989d8;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1e5799;
+        }
+
+        .resultado {
+            display: none;
+        }
+
+        .resultado.show {
+            display: block;
+        }
+
+        .valor-destaque {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .valor-destaque h3 {
+            color: #1e5799;
+            margin-bottom: 10px;
+        }
+
+        .valor-destaque .valor {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2989d8;
+        }
+
+        .tabela-detalhes {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .tabela-detalhes th,
+        .tabela-detalhes td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tabela-detalhes th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #1e5799;
+        }
+
+        .tabela-detalhes tr:hover {
+            background: #f9f9f9;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2989d8;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparacao-antecipacao {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .comparacao-antecipacao h4 {
+            color: #1e5799;
+            margin-bottom: 15px;
+        }
+
+        .opcao-pagamento {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+        }
+
+        .opcao-pagamento.destaque {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .btn-action {
+            background: white;
+            color: #2989d8;
+            padding: 10px 20px;
+            border: 2px solid #2989d8;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            background: #2989d8;
+            color: white;
+        }
+
+        @media print {
+            .header, .card:first-child, .btn, .btn-action {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Calculadora de Indenização SMT</h1>
+            <p>Movimento Mais Brasil - Socorro Mútuo Total</p>
+        </div>
+
+        <div class="main-content">
+            <!-- FORMULÁRIO -->
+            <div class="card">
+                <h2>📋 Dados do Sinistro</h2>
+                
+                <form id="formCalculadora">
+                    <!-- Identificação -->
+                    <div class="form-section">
+                        <h3>Identificação do Veículo</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Nome do Associado:</label>
+                                <input type="text" id="nome_associado" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Placa:</label>
+                                <input type="text" id="placa" required>
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Veículo:</label>
+                                <input type="text" id="veiculo" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor FIPE (R$):</label>
+                                <input type="number" id="valor_fipe" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Sinistro:</label>
+                            <select id="tipo_sinistro" required>
+                                <option value="">Selecione...</option>
+                                <option value="Roubo">Roubo</option>
+                                <option value="Furto">Furto</option>
+                                <option value="Perda Total">Perda Total (Colisão/Capotamento)</option>
+                                <option value="Incêndio">Incêndio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Depreciações -->
+                    <div class="form-section">
+                        <h3>Depreciações Aplicáveis</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="leilao_sinistro">
+                            <label for="leilao_sinistro">Veículo de Leilão por Sinistro (-25%)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="leilao_financeiro">
+                            <label for="leilao_financeiro">Veículo de Leilão Financeiro (-15%)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="beneficio_fiscal">
+                            <label for="beneficio_fiscal">Benefício Fiscal IPI/ICMS (-20%)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="incendiado_submerso">
+                            <label for="incendiado_submerso">Incendiado/Submerso após Roubo (-30%)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="rodas_som_sem_rastreador">
+                            <label for="rodas_som_sem_rastreador">Rodas/Som sem Rastreador (-20%)</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Redução de Cota (R$):</label>
+                            <input type="number" id="reducao_cota_valor" step="0.01" value="0">
+                        </div>
+                    </div>
+
+                    <!-- Descontos -->
+                    <div class="form-section">
+                        <h3>Descontos Obrigatórios</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Contribuição Mensal (R$):</label>
+                                <input type="number" id="contribuicao_mensal" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Honorários Despachante (R$):</label>
+                                <input type="number" id="honorarios_despachante" step="0.01" value="120">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Débitos do Veículo (R$):</label>
+                                <input type="number" id="debitos_veiculo" step="0.01" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Saldo Financiamento (R$):</label>
+                                <input type="number" id="saldo_financiamento" step="0.01" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Outros Descontos (R$):</label>
+                            <input type="number" id="outros_descontos" step="0.01" value="0">
+                        </div>
+                    </div>
+
+                    <!-- Antecipação -->
+                    <div class="form-section">
+                        <h3>Configuração de Antecipação</h3>
+                        <div class="form-group">
+                            <label>Taxa de Desconto Mensal (%):</label>
+                            <input type="number" id="taxa_desconto_mensal" step="0.01" min="4" max="6" value="5" required>
+                            <small style="color: #666; display: block; margin-top: 5px;">Mínimo: 4% | Máximo: 6%</small>
+                        </div>
+                    </div>
+
+                    <!-- Requisitos -->
+                    <div class="form-section">
+                        <h3>Requisitos</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="rastreador_instalado">
+                            <label for="rastreador_instalado">Rastreador Instalado e Funcionando</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">🧮 Calcular Indenização</button>
+                </form>
+            </div>
+
+            <!-- RESULTADO -->
+            <div class="card resultado" id="resultado">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">💰 Resultado do Cálculo</h2>
+                    <div>
+                        <button onclick="imprimirResultado()" class="btn-action" style="margin-right: 10px;">
+                            🖨️ Imprimir
+                        </button>
+                        <button onclick="gerarPDF()" class="btn-action">
+                            📄 Gerar PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="alertas"></div>
+
+                <div class="valor-destaque">
+                    <h3>Valor Líquido da Indenização</h3>
+                    <div class="valor" id="valorLiquido">R$ 0,00</div>
+                    <p id="prazoPagamento"></p>
+                </div>
+
+                <div class="comparacao-antecipacao">
+                    <h4>⚡ Opções de Pagamento</h4>
+                    
+                    <div class="opcao-pagamento">
+                        <strong>📅 Opção 1: Aguardar Prazo Regulamentar</strong>
+                        <p id="opcao1"></p>
+                    </div>
+
+                    <div class="opcao-pagamento destaque">
+                        <strong>💸 Opção 2: Receber Antecipado (com desconto)</strong>
+                        <p id="opcao2"></p>
+                        <p id="detalhesAntecipacao"></p>
+                    </div>
+                </div>
+
+                <h3>📊 Detalhamento dos Cálculos</h3>
+                
+                <div class="info-box">
+                    <strong>Valor Base (FIPE):</strong> <span id="valorFipe"></span>
+                </div>
+
+                <h4>Depreciações Aplicadas:</h4>
+                <table class="tabela-detalhes" id="tabelaDepreciacoes">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Percentual</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <h4>Descontos Aplicados:</h4>
+                <table class="tabela-detalhes" id="tabelaDescontos">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <div class="info-box">
+                    <strong>Total de Descontos:</strong> <span id="totalDescontos"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('formCalculadora');
+        const resultado = document.getElementById('resultado');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const dados = {
+                nome_associado: document.getElementById('nome_associado').value,
+                placa: document.getElementById('placa').value,
+                veiculo: document.getElementById('veiculo').value,
+                valor_fipe: parseFloat(document.getElementById('valor_fipe').value),
+                tipo_sinistro: document.getElementById('tipo_sinistro').value,
+                
+                leilao_sinistro: document.getElementById('leilao_sinistro').checked,
+                leilao_financeiro: document.getElementById('leilao_financeiro').checked,
+                beneficio_fiscal: document.getElementById('beneficio_fiscal').checked,
+                incendiado_submerso: document.getElementById('incendiado_submerso').checked,
+                rodas_som_sem_rastreador: document.getElementById('rodas_som_sem_rastreador').checked,
+                reducao_cota_valor: parseFloat(document.getElementById('reducao_cota_valor').value),
+                
+                contribuicao_mensal: parseFloat(document.getElementById('contribuicao_mensal').value),
+                honorarios_despachante: parseFloat(document.getElementById('honorarios_despachante').value),
+                debitos_veiculo: parseFloat(document.getElementById('debitos_veiculo').value),
+                saldo_financiamento: parseFloat(document.getElementById('saldo_financiamento').value),
+                outros_descontos: parseFloat(document.getElementById('outros_descontos').value),
+                
+                taxa_desconto_mensal: parseFloat(document.getElementById('taxa_desconto_mensal').value) / 100,
+                
+                rastreador_instalado: document.getElementById('rastreador_instalado').checked
+            };
+
+            try {
+                const response = await fetch('/api/calcular', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dados)
+                });
+
+                const result = await response.json();
+                exibirResultado(result);
+            } catch (error) {
+                alert('Erro ao calcular: ' + error.message);
+            }
+        });
+
+        function exibirResultado(result) {
+            resultado.classList.add('show');
+            resultado.scrollIntoView({ behavior: 'smooth' });
+
+            // Alertas
+            const alertas = document.getElementById('alertas');
+            alertas.innerHTML = '';
+            
+            if (result.requisitos.criticos.length > 0) {
+                result.requisitos.criticos.forEach(msg => {
+                    alertas.innerHTML += `<div class="alert alert-danger">${msg}</div>`;
+                });
+            }
+            
+            if (result.observacoes.length > 0) {
+                result.observacoes.forEach(msg => {
+                    alertas.innerHTML += `<div class="alert alert-warning">${msg}</div>`;
+                });
+            }
+
+            // Valor Líquido
+            document.getElementById('valorLiquido').textContent = 
+                'R$ ' + result.valor_final.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            document.getElementById('prazoPagamento').textContent = 
+                `Prazo: ${result.prazo_pagamento.prazo_total_dias_uteis} dias úteis (${result.prazo_pagamento.categoria})`;
+
+            // Opções de Pagamento
+            document.getElementById('opcao1').innerHTML = 
+                `Receber <strong>R$ ${result.valor_final.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> em ${result.prazo_pagamento.prazo_total_dias_uteis} dias úteis`;
+
+            document.getElementById('opcao2').innerHTML = 
+                `Receber <strong>R$ ${result.antecipacao.valor_antecipado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> HOJE (pagamento imediato)`;
+
+            document.getElementById('detalhesAntecipacao').innerHTML = 
+                `<small>Desconto: R$ ${result.antecipacao.desconto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} 
+                (${result.antecipacao.taxa_desconto_pct.toFixed(2)}%) | 
+                Taxa: ${result.antecipacao.taxa_mensal_pct.toFixed(2)}% ao mês</small>`;
+
+            // Valor FIPE
+            document.getElementById('valorFipe').textContent = 
+                'R$ ' + result.calculos.valor_fipe_original.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            // Depreciações
+            const tabelaDepreciacoes = document.getElementById('tabelaDepreciacoes').querySelector('tbody');
+            tabelaDepreciacoes.innerHTML = '';
+            
+            if (result.depreciacao.aplicadas.length === 0) {
+                tabelaDepreciacoes.innerHTML = '<tr><td colspan="3" style="text-align:center">Nenhuma depreciação aplicada</td></tr>';
+            } else {
+                result.depreciacao.aplicadas.forEach(dep => {
+                    tabelaDepreciacoes.innerHTML += `
+                        <tr>
+                            <td>${dep.tipo}</td>
+                            <td>${(dep.percentual * 100).toFixed(2)}%</td>
+                            <td>R$ ${dep.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Descontos
+            const tabelaDescontos = document.getElementById('tabelaDescontos').querySelector('tbody');
+            tabelaDescontos.innerHTML = '';
+            
+            result.descontos.itens.forEach(desc => {
+                tabelaDescontos.innerHTML += `
+                    <tr>
+                        <td>${desc.descricao}</td>
+                        <td>R$ ${desc.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('totalDescontos').textContent = 
+                'R$ ' + result.descontos.total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        }
+
+        function imprimirResultado() {
+            window.print();
+        }
+
+        async function gerarPDF() {
+            // Criar elemento temporário para o PDF
+            const resultadoDiv = document.getElementById('resultado');
+            const nomeAssociado = document.getElementById('nome_associado').value;
+            const placa = document.getElementById('placa').value;
+            
+            // Preparar conteúdo HTML para PDF
+            const conteudoPDF = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Cálculo de Indenização SMT - ${nomeAssociado}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { color: #1e5799; text-align: center; }
+                        h2 { color: #2989d8; border-bottom: 2px solid #2989d8; padding-bottom: 5px; }
+                        .info { background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+                        .destaque { background: #f0fff4; border: 2px solid #28a745; padding: 15px; margin: 10px 0; border-radius: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+                        th { background: #f5f5f5; font-weight: bold; }
+                        .valor-grande { font-size: 24px; font-weight: bold; color: #2989d8; text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    ${resultadoDiv.innerHTML}
+                </body>
+                </html>
+            `;
+            
+            // Criar blob e fazer download
+            const blob = new Blob([conteudoPDF], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Calculo_SMT_${nomeAssociado.replace(/\s+/g, '_')}_${placa}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('Arquivo HTML gerado! Você pode abrir e salvar como PDF usando seu navegador (Ctrl+P > Salvar como PDF)');
+        }
+    </script>
+</body>
+</html>
+
