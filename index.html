@@ -624,48 +624,192 @@
             });
         }
 
+        function gerarConteudoImpressao() {
+            // Coletar dados do formulário
+            const dados = {
+                nome: document.getElementById('nome_beneficiario').value || 'Não informado',
+                placa: document.getElementById('placa').value || 'Não informado',
+                veiculo: document.getElementById('veiculo').value || 'Não informado',
+                data: document.getElementById('data_sinistro').value,
+                regulagem: parseFloat(document.getElementById('valor_regulagem').value) || 0,
+                participacao: parseFloat(document.getElementById('valor_participacao').value) || 0,
+                orcamento: parseFloat(document.getElementById('orcamento_oficina').value) || 0,
+                diasRep: document.getElementById('dias_reparacao').value || '15',
+                diasCarro: parseInt(document.getElementById('dias_carro_reserva').value) || 0
+            };
+            
+            // Calcular valores
+            const valorBase = dados.regulagem - dados.participacao;
+            const custoCarroReserva = dados.diasCarro * 75;
+            
+            // Opção 1
+            const op1Custo = valorBase;
+            const op1Total = op1Custo + custoCarroReserva;
+            
+            // Opção 2 (usar valores calculados se disponíveis)
+            const op2Valor = window.ultimoCalculo?.opcao2_valor_recebido || valorBase * 0.65;
+            
+            // Opção 3
+            const op3Valor = window.ultimoCalculo?.opcao3_valor_autorizado || (dados.orcamento > 0 ? dados.orcamento * 0.59 : valorBase * 0.59);
+            const op3Total = op3Valor + custoCarroReserva;
+            
+            // Determinar recomendada
+            const opcoes = [
+                { id: 1, nome: 'Opção 1 (Aguardar Reparo)', valor: op1Total },
+                { id: 2, nome: 'Opção 2 (Acordo em Dinheiro)', valor: op2Valor },
+                { id: 3, nome: 'Opção 3 (Oficina Antecipada)', valor: op3Total }
+            ];
+            const menor = opcoes.reduce((min, op) => op.valor < min.valor ? op : min);
+            
+            // Formatar data
+            const formatData = (d) => {
+                if (!d) return 'Não informado';
+                const [a, m, dia] = d.split('-');
+                return `${dia}/${m}/${a}`;
+            };
+            
+            // Formatar moeda
+            const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+            
+            // Gerar HTML
+            return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório SMA - ${dados.nome}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 15mm; }
+        body { font-family: Arial, sans-serif; font-size: 11pt; color: #333; background: white; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; border-bottom: 3px solid #2c5aa0; margin-bottom: 25px; }
+        .header h1 { color: #2c5aa0; font-size: 20pt; margin-bottom: 5px; }
+        .header .subtitle { color: #666; font-size: 11pt; margin-bottom: 15px; }
+        .header .nome { background: #2c5aa0; color: white; padding: 10px 20px; display: inline-block; border-radius: 5px; font-size: 14pt; font-weight: bold; margin-top: 10px; }
+        .section { margin-bottom: 25px; page-break-inside: avoid; }
+        .section-title { background: #2c5aa0; color: white; padding: 8px 15px; font-size: 13pt; font-weight: bold; margin-bottom: 10px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        table th { background: #f0f0f0; color: #333; font-weight: bold; text-align: left; padding: 10px; border: 1px solid #ddd; }
+        table td { padding: 10px; border: 1px solid #ddd; }
+        table tr:nth-child(even) { background: #f9f9f9; }
+        .valor-destaque { font-weight: bold; color: #2c5aa0; font-size: 12pt; }
+        .total-row { background: #e8f0fe !important; font-weight: bold; }
+        .total-row td { color: #2c5aa0; font-size: 12pt; }
+        .opcao-card { border: 2px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; }
+        .opcao-card.recomendada { border-color: #4caf50; background: #f1f8f4; }
+        .opcao-card .opcao-header { font-size: 13pt; font-weight: bold; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #ddd; }
+        .opcao-card.recomendada .opcao-header { color: #4caf50; }
+        .opcao-card .badge { background: #4caf50; color: white; padding: 3px 10px; border-radius: 3px; font-size: 9pt; margin-left: 10px; }
+        .opcao-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .opcao-info-item { padding: 8px; background: white; border-radius: 3px; }
+        .opcao-info-label { font-size: 9pt; color: #666; margin-bottom: 3px; }
+        .opcao-info-value { font-size: 11pt; font-weight: bold; color: #333; }
+        .recomendacao-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 3px; }
+        .recomendacao-box strong { color: #856404; font-size: 12pt; }
+        .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center; font-size: 9pt; color: #666; }
+        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Calculadora SMA</h1>
+        <div class="subtitle">Socorro Mútuo Acordo - Movimento Mais Brasil</div>
+        <div class="nome">${dados.nome}</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">📋 Dados do Sinistro</div>
+        <table>
+            <tr><th style="width:40%">Item</th><th>Descrição</th></tr>
+            <tr><td>Associado</td><td>${dados.nome}</td></tr>
+            <tr><td>Veículo</td><td>${dados.veiculo}</td></tr>
+            <tr><td>Placa</td><td>${dados.placa}</td></tr>
+            <tr><td>Data do Sinistro</td><td>${formatData(dados.data)}</td></tr>
+            <tr><td>Valor da Regulagem</td><td class="valor-destaque">${fmt(dados.regulagem)}</td></tr>
+            <tr><td>Valor da Participação/Franquia</td><td class="valor-destaque">${fmt(dados.participacao)}</td></tr>
+            <tr><td>Orçamento da Oficina/CILIA</td><td>${dados.orcamento > 0 ? fmt(dados.orcamento) : 'Não informado'}</td></tr>
+            <tr><td>Dias Previstos para Reparação</td><td>${dados.diasRep}</td></tr>
+            <tr><td>Dias de Carro Reserva</td><td>${dados.diasCarro}</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">💵 Valor Base para Cálculo</div>
+        <table>
+            <tr class="total-row"><td style="width:70%">Valor Base (Regulagem - Participação)</td><td class="valor-destaque">${fmt(valorBase)}</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">⚡ Opções de Pagamento</div>
+        
+        <div class="opcao-card ${menor.id === 1 ? 'recomendada' : ''}">
+            <div class="opcao-header">🚗 Opção 1: Aguardar Reparo${menor.id === 1 ? ' <span class="badge">✓ RECOMENDADA</span>' : ''}</div>
+            <div class="opcao-info">
+                <div class="opcao-info-item"><div class="opcao-info-label">Prazo</div><div class="opcao-info-value">${dados.diasRep} dias úteis</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">Custo do Sinistro</div><div class="opcao-info-value">${fmt(op1Custo)}</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">Carro Reserva</div><div class="opcao-info-value">${fmt(custoCarroReserva)}</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">TOTAL</div><div class="opcao-info-value" style="color:#2c5aa0;font-size:13pt">${fmt(op1Total)}</div></div>
+            </div>
+        </div>
+        
+        <div class="opcao-card ${menor.id === 2 ? 'recomendada' : ''}">
+            <div class="opcao-header">💰 Opção 2: Acordo em Dinheiro${menor.id === 2 ? ' <span class="badge">✓ RECOMENDADA</span>' : ''}</div>
+            <div class="opcao-info">
+                <div class="opcao-info-item"><div class="opcao-info-label">Valor Recebido</div><div class="opcao-info-value" style="color:#2c5aa0;font-size:13pt">${fmt(op2Valor)}</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">Prazo</div><div class="opcao-info-value">7 a 10 dias após acordo assinado</div></div>
+            </div>
+        </div>
+        
+        <div class="opcao-card ${menor.id === 3 ? 'recomendada' : ''}">
+            <div class="opcao-header">🔧 Opção 3: Oficina Antecipada${menor.id === 3 ? ' <span class="badge">✓ RECOMENDADA</span>' : ''}</div>
+            <div class="opcao-info">
+                <div class="opcao-info-item"><div class="opcao-info-label">Valor Autorizado</div><div class="opcao-info-value">${fmt(op3Valor)}</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">Prazo</div><div class="opcao-info-value">Até 10 dias após finalização</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">Carro Reserva</div><div class="opcao-info-value">${fmt(custoCarroReserva)}</div></div>
+                <div class="opcao-info-item"><div class="opcao-info-label">TOTAL</div><div class="opcao-info-value" style="color:#2c5aa0;font-size:13pt">${fmt(op3Total)}</div></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="recomendacao-box">
+        <strong>💡 Recomendação:</strong> ${menor.nome} é mais vantajosa (menor valor: ${fmt(menor.valor)})
+    </div>
+    
+    <div class="footer">
+        <div style="margin-bottom:10px"><strong>Data de Geração:</strong> ${new Date().toLocaleString('pt-BR')}</div>
+        <div>Calculadora SMA - Socorro Mútuo Acordo<br>Movimento Mais Brasil - Antecipação de Valores de Reparo</div>
+    </div>
+</body>
+</html>`;
+        }
+        
         function imprimirResultado() {
-            window.print();
+            const conteudo = gerarConteudoImpressao();
+            const janelaImpressao = window.open('', '_blank', 'width=800,height=600');
+            janelaImpressao.document.write(conteudo);
+            janelaImpressao.document.close();
+            setTimeout(() => {
+                janelaImpressao.focus();
+                janelaImpressao.print();
+            }, 250);
         }
 
         function gerarPDF() {
-            const resultadoDiv = document.getElementById('resultado');
-            const valorRegulagem = document.getElementById('valor_regulagem').value;
+            const conteudo = gerarConteudoImpressao();
+            const nomeBeneficiario = document.getElementById('nome_beneficiario').value || 'Associado';
+            const nomeArquivo = `Relatorio_SMA_${nomeBeneficiario.replace(/\s+/g, '_')}.html`;
             
-            const conteudoPDF = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Cálculo SMA - R$ ${valorRegulagem}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h1 { color: #667eea; text-align: center; }
-                        h2 { color: #764ba2; border-bottom: 2px solid #764ba2; padding-bottom: 5px; }
-                        .info { background: #e8eaf6; padding: 15px; margin: 10px 0; border-radius: 5px; }
-                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-                        th { background: #f5f5f5; font-weight: bold; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Calculadora SMA - Movimento Mais Brasil</h1>
-                    ${resultadoDiv.innerHTML}
-                </body>
-                </html>
-            `;
-            
-            const blob = new Blob([conteudoPDF], { type: 'text/html' });
+            const blob = new Blob([conteudo], { type: 'text/html;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Calculo_SMA_${valorRegulagem.replace('.', '_')}.html`;
+            a.download = nomeArquivo;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            alert('Arquivo HTML gerado! Você pode abrir e salvar como PDF (Ctrl+P > Salvar como PDF)');
+            alert('✅ Arquivo HTML gerado!\n\n📄 Para converter em PDF:\n1. Abra o arquivo baixado\n2. Pressione Ctrl+P (ou Cmd+P no Mac)\n3. Selecione "Salvar como PDF"\n4. Clique em "Salvar"');
         }
     </script>
 </body>
