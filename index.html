@@ -481,9 +481,16 @@
                         valor_autorizado: opcao3_valor_autorizado,
                         prazo: opcao3_prazo
                     },
-                    recomendacao: opcao2_valor_recebido > opcao1_valor_autorizado * 0.8 ? 
-                        "Opção 2 (Acordo em Dinheiro) oferece melhor custo-benefício" : 
-                        "Opção 1 (Aguardar Reparo) é mais vantajosa"
+                    recomendacao: (() => {
+                        const opcao1_custo = valor_regulagem - valor_participacao;
+                        const opcoes = [
+                            { nome: "Opção 1 (Aguardar Reparo)", valor: opcao1_custo },
+                            { nome: "Opção 2 (Acordo em Dinheiro)", valor: opcao2_valor_recebido },
+                            { nome: "Opção 3 (Oficina Antecipada)", valor: opcao3_valor_autorizado }
+                        ];
+                        const menorOpcao = opcoes.reduce((min, opcao) => opcao.valor < min.valor ? opcao : min);
+                        return menorOpcao.nome + " é mais vantajosa (menor valor)";
+                    })()
                 },
                 acordo_associado: {
                     financiamento: {
