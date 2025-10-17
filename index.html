@@ -429,11 +429,11 @@
             // Opção 2: Acordo em Dinheiro
             const opcao2_valor_base = valor_acordo_associado;
             const opcao2_valor_recebido = contraproposta > 0 ? contraproposta : opcao2_valor_base;
-            const opcao2_prazo = "Imediato";
+            const opcao2_prazo = "7 a 10 dias após acordo assinado";
 
             // Opção 3: Oficina Antecipada
             const opcao3_valor_autorizado = valor_autorizacao_oficina;
-            const opcao3_prazo = "Imediato";
+            const opcao3_prazo = "Até 10 dias após finalização do serviço";
 
             // Financiamento
             const valor_operacao = opcao2_valor_recebido;
@@ -467,7 +467,7 @@
                 comparacao: {
                     opcao_1_aguardar_reparo: {
                         prazo: opcao1_prazo,
-                        custo: valor_participacao,
+                        custo: valor_regulagem - valor_participacao,
                         vantagens: ["Veículo reparado", "Sem desembolso imediato"],
                         desvantagens: ["Aguardar reparo", "Sem dinheiro em mãos"]
                     },
