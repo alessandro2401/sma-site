@@ -264,6 +264,11 @@
                             <label>Dias Previstos para Reparação:</label>
                             <input type="number" id="dias_reparo" value="15" min="1">
                         </div>
+                        <div class="form-group">
+                            <label>Dias de Carro Reserva:</label>
+                            <input type="number" id="dias_carro_reserva" value="0" min="0" placeholder="Ex: 7, 10, 15...">
+                            <small style="color: #666; font-size: 12px;">Custo: R$ 75,00 por diária</small>
+                        </div>
                     </div>
 
                     <div class="form-section">
@@ -376,6 +381,7 @@
                 valor_participacao: parseFloat(document.getElementById('valor_participacao').value),
                 orcamento_oficina: parseFloat(document.getElementById('orcamento_oficina').value) || parseFloat(document.getElementById('valor_regulagem').value),
                 dias_reparo: parseInt(document.getElementById('dias_reparo').value),
+                dias_carro_reserva: parseInt(document.getElementById('dias_carro_reserva').value) || 0,
                 contraproposta: parseFloat(document.getElementById('contraproposta').value),
                 taxa_juros: parseFloat(document.getElementById('taxa_juros').value) / 100,
                 n_parcelas: parseInt(document.getElementById('n_parcelas').value)
@@ -395,9 +401,14 @@
             const valor_participacao = dados.valor_participacao;
             const orcamento_oficina = dados.orcamento_oficina;
             const dias_reparo = dados.dias_reparo;
+            const dias_carro_reserva = dados.dias_carro_reserva || 0;
             const contraproposta = dados.contraproposta || 0;
             const taxa_juros = dados.taxa_juros;
             const n_parcelas = dados.n_parcelas;
+            
+            // Cálculo do Carro Reserva
+            const custo_diaria_carro = 75.00;
+            const custo_carro_reserva = dias_carro_reserva * custo_diaria_carro;
 
             // Cálculos intermediários baseados na planilha original
             // H48 = C4 (Regulagem), H49 = C6 (Orçamento)
@@ -468,6 +479,8 @@
                     opcao_1_aguardar_reparo: {
                         prazo: opcao1_prazo,
                         custo: valor_regulagem - valor_participacao,
+                        custo_carro_reserva: custo_carro_reserva,
+                        custo_total: (valor_regulagem - valor_participacao) + custo_carro_reserva,
                         vantagens: ["Veículo reparado", "Sem desembolso imediato"],
                         desvantagens: ["Aguardar reparo", "Sem dinheiro em mãos"]
                     },
@@ -479,14 +492,19 @@
                     },
                     opcao_3_oficina_antecipada: {
                         valor_autorizado: opcao3_valor_autorizado,
+                        custo_carro_reserva: custo_carro_reserva,
+                        valor_total: opcao3_valor_autorizado + custo_carro_reserva,
                         prazo: opcao3_prazo
                     },
                     recomendacao: (() => {
-                        const opcao1_custo = valor_regulagem - valor_participacao;
+                        const opcao1_total = (valor_regulagem - valor_participacao) + custo_carro_reserva;
+                        const opcao2_total = opcao2_valor_recebido; // Não inclui carro reserva (dinheiro imediato)
+                        const opcao3_total = opcao3_valor_autorizado + custo_carro_reserva;
+                        
                         const opcoes = [
-                            { nome: "Opção 1 (Aguardar Reparo)", valor: opcao1_custo },
-                            { nome: "Opção 2 (Acordo em Dinheiro)", valor: opcao2_valor_recebido },
-                            { nome: "Opção 3 (Oficina Antecipada)", valor: opcao3_valor_autorizado }
+                            { nome: "Opção 1 (Aguardar Reparo)", valor: opcao1_total },
+                            { nome: "Opção 2 (Acordo em Dinheiro)", valor: opcao2_total },
+                            { nome: "Opção 3 (Oficina Antecipada)", valor: opcao3_total }
                         ];
                         const menorOpcao = opcoes.reduce((min, opcao) => opcao.valor < min.valor ? opcao : min);
                         return menorOpcao.nome + " é mais vantajosa (menor valor)";
@@ -537,7 +555,9 @@
                     <h4>📅 Opção 1: Aguardar Reparo</h4>
                     <div class="opcao-valor">Veículo Reparado</div>
                     <div class="opcao-info">Prazo: ${opcao1.prazo}</div>
-                    <div class="opcao-info">Custo: R$ ${opcao1.custo.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="opcao-info">Custo do Sinistro: R$ ${opcao1.custo.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    ${opcao1.custo_carro_reserva > 0 ? `<div class="opcao-info">Carro Reserva: R$ ${opcao1.custo_carro_reserva.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
+                    <div class="opcao-info" style="font-weight: bold; font-size: 1.1em; color: #764ba2; margin-top: 8px;">TOTAL: R$ ${opcao1.custo_total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     <div class="vantagens">
                         <h5>Vantagens:</h5>
                         <ul>${opcao1.vantagens.map(v => `<li>${v}</li>`).join('')}</ul>
@@ -572,6 +592,8 @@
                     <h4>🔧 Opção 3: Oficina Antecipada</h4>
                     <div class="opcao-valor">R$ ${opcao3.valor_autorizado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
                     <div class="opcao-info">Prazo: ${opcao3.prazo}</div>
+                    ${opcao3.custo_carro_reserva > 0 ? `<div class="opcao-info">Carro Reserva: R$ ${opcao3.custo_carro_reserva.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
+                    ${opcao3.custo_carro_reserva > 0 ? `<div class="opcao-info" style="font-weight: bold; font-size: 1.1em; color: #764ba2; margin-top: 8px;">TOTAL: R$ ${opcao3.valor_total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
                 </div>
             `;
 
