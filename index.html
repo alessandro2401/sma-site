@@ -389,6 +389,11 @@
 
             try {
                 const result = calcularSMA(dados);
+                // Salvar resultado para uso na impressão
+                window.ultimoCalculo = {
+                    opcao2_valor_recebido: result.comparacao.opcao_2_acordo_dinheiro.valor_recebido,
+                    opcao3_valor_autorizado: result.comparacao.opcao_3_oficina_antecipada.valor_autorizado
+                };
                 exibirResultado(result);
             } catch (error) {
                 alert('Erro ao calcular: ' + error.message);
