@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório SMA - {{NOME_BENEFICIARIO}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 3px solid #2c5aa0;
+            margin-bottom: 25px;
+        }
+        
+        .header h1 {
+            color: #2c5aa0;
+            font-size: 20pt;
+            margin-bottom: 5px;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 11pt;
+            margin-bottom: 15px;
+        }
+        
+        .header .nome-associado {
+            background: #2c5aa0;
+            color: white;
+            padding: 10px 20px;
+            display: inline-block;
+            border-radius: 5px;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            background: #2c5aa0;
+            color: white;
+            padding: 8px 15px;
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-radius: 3px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        table th {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        
+        table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        
+        table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .valor-destaque {
+            font-weight: bold;
+            color: #2c5aa0;
+            font-size: 12pt;
+        }
+        
+        .total-row {
+            background: #e8f0fe !important;
+            font-weight: bold;
+        }
+        
+        .total-row td {
+            color: #2c5aa0;
+            font-size: 12pt;
+        }
+        
+        .opcao-card {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .opcao-card.recomendada {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+        
+        .opcao-card .opcao-header {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .opcao-card.recomendada .opcao-header {
+            color: #4caf50;
+        }
+        
+        .opcao-card .badge-recomendada {
+            background: #4caf50;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 9pt;
+            margin-left: 10px;
+        }
+        
+        .opcao-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .opcao-info-item {
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+        }
+        
+        .opcao-info-label {
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .opcao-info-value {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .vantagens-desvantagens {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .vantagens, .desvantagens {
+            font-size: 9pt;
+        }
+        
+        .vantagens h4, .desvantagens h4 {
+            font-size: 10pt;
+            margin-bottom: 5px;
+        }
+        
+        .vantagens h4 { color: #4caf50; }
+        .desvantagens h4 { color: #f44336; }
+        
+        .vantagens ul, .desvantagens ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .vantagens li:before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .desvantagens li:before {
+            content: "✗ ";
+            color: #f44336;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .recomendacao-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        
+        .recomendacao-box strong {
+            color: #856404;
+            font-size: 12pt;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        .footer .data-geracao {
+            margin-bottom: 10px;
+        }
+        
+        @media print {
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .section { page-break-inside: avoid; }
+            .opcao-card { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <!-- CABEÇALHO -->
+    <div class="header">
+        <h1>💰 Calculadora SMA</h1>
+        <div class="subtitle">Socorro Mútuo Acordo - Movimento Mais Brasil</div>
+        <div class="nome-associado">{{NOME_BENEFICIARIO}}</div>
+    </div>
+
+    <!-- DADOS DO SINISTRO -->
+    <div class="section">
+        <div class="section-title">📋 Dados do Sinistro</div>
+        <table>
+            <tr>
+                <th style="width: 40%;">Item</th>
+                <th>Descrição</th>
+            </tr>
+            <tr>
+                <td>Associado</td>
+                <td>{{NOME_BENEFICIARIO}}</td>
+            </tr>
+            <tr>
+                <td>Veículo</td>
+                <td>{{VEICULO}}</td>
+            </tr>
+            <tr>
+                <td>Placa</td>
+                <td>{{PLACA}}</td>
+            </tr>
+            <tr>
+                <td>Data do Sinistro</td>
+                <td>{{DATA_SINISTRO}}</td>
+            </tr>
+            <tr>
+                <td>Valor da Regulagem</td>
+                <td class="valor-destaque">{{VALOR_REGULAGEM}}</td>
+            </tr>
+            <tr>
+                <td>Valor da Participação/Franquia</td>
+                <td class="valor-destaque">{{VALOR_PARTICIPACAO}}</td>
+            </tr>
+            <tr>
+                <td>Orçamento da Oficina/CILIA</td>
+                <td>{{ORCAMENTO_OFICINA}}</td>
+            </tr>
+            <tr>
+                <td>Dias Previstos para Reparação</td>
+                <td>{{DIAS_REPARACAO}}</td>
+            </tr>
+            <tr>
+                <td>Dias de Carro Reserva</td>
+                <td>{{DIAS_CARRO_RESERVA}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- VALOR BASE PARA CÁLCULO -->
+    <div class="section">
+        <div class="section-title">💵 Valor Base para Cálculo</div>
+        <table>
+            <tr class="total-row">
+                <td style="width: 70%;">Valor Base (Regulagem - Participação)</td>
+                <td class="valor-destaque">{{VALOR_BASE}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- OPÇÕES DE PAGAMENTO -->
+    <div class="section">
+        <div class="section-title">⚡ Opções de Pagamento</div>
+        
+        <!-- OPÇÃO 1 -->
+        <div class="opcao-card {{OPCAO1_RECOMENDADA}}">
+            <div class="opcao-header">
+                🚗 Opção 1: Aguardar Reparo
+                {{OPCAO1_BADGE}}
+            </div>
+            <div class="opcao-info">
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Prazo</div>
+                    <div class="opcao-info-value">{{OPCAO1_PRAZO}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Custo do Sinistro</div>
+                    <div class="opcao-info-value">{{OPCAO1_CUSTO}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Carro Reserva</div>
+                    <div class="opcao-info-value">{{OPCAO1_CARRO_RESERVA}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">TOTAL</div>
+                    <div class="opcao-info-value" style="color: #2c5aa0; font-size: 13pt;">{{OPCAO1_TOTAL}}</div>
+                </div>
+            </div>
+            <div class="vantagens-desvantagens">
+                <div class="vantagens">
+                    <h4>Vantagens:</h4>
+                    <ul>{{OPCAO1_VANTAGENS}}</ul>
+                </div>
+                <div class="desvantagens">
+                    <h4>Desvantagens:</h4>
+                    <ul>{{OPCAO1_DESVANTAGENS}}</ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPÇÃO 2 -->
+        <div class="opcao-card {{OPCAO2_RECOMENDADA}}">
+            <div class="opcao-header">
+                💰 Opção 2: Acordo em Dinheiro
+                {{OPCAO2_BADGE}}
+            </div>
+            <div class="opcao-info">
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Valor Recebido</div>
+                    <div class="opcao-info-value" style="color: #2c5aa0; font-size: 13pt;">{{OPCAO2_VALOR}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Prazo</div>
+                    <div class="opcao-info-value">{{OPCAO2_PRAZO}}</div>
+                </div>
+            </div>
+            <div class="vantagens-desvantagens">
+                <div class="vantagens">
+                    <h4>Vantagens:</h4>
+                    <ul>{{OPCAO2_VANTAGENS}}</ul>
+                </div>
+                <div class="desvantagens">
+                    <h4>Desvantagens:</h4>
+                    <ul>{{OPCAO2_DESVANTAGENS}}</ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPÇÃO 3 -->
+        <div class="opcao-card {{OPCAO3_RECOMENDADA}}">
+            <div class="opcao-header">
+                🔧 Opção 3: Oficina Antecipada
+                {{OPCAO3_BADGE}}
+            </div>
+            <div class="opcao-info">
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Valor Autorizado</div>
+                    <div class="opcao-info-value">{{OPCAO3_VALOR}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Prazo</div>
+                    <div class="opcao-info-value">{{OPCAO3_PRAZO}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">Carro Reserva</div>
+                    <div class="opcao-info-value">{{OPCAO3_CARRO_RESERVA}}</div>
+                </div>
+                <div class="opcao-info-item">
+                    <div class="opcao-info-label">TOTAL</div>
+                    <div class="opcao-info-value" style="color: #2c5aa0; font-size: 13pt;">{{OPCAO3_TOTAL}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECOMENDAÇÃO -->
+    <div class="recomendacao-box">
+        <strong>💡 Recomendação:</strong> {{RECOMENDACAO}}
+    </div>
+
+    <!-- DETALHAMENTO DO FINANCIAMENTO -->
+    {{FINANCIAMENTO_SECTION}}
+
+    <!-- RODAPÉ -->
+    <div class="footer">
+        <div class="data-geracao">
+            <strong>Data de Geração:</strong> {{DATA_GERACAO}}
+        </div>
+        <div>
+            Calculadora SMA - Socorro Mútuo Acordo<br>
+            Movimento Mais Brasil - Antecipação de Valores de Reparo
+        </div>
+    </div>
+</body>
+</html>
+
