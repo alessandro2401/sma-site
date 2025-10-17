@@ -625,17 +625,23 @@
         }
 
         function gerarConteudoImpressao() {
+            // Função auxiliar para obter valor com segurança
+            const getVal = (id, defaultVal = '') => {
+                const el = document.getElementById(id);
+                return el && el.value ? el.value : defaultVal;
+            };
+            
             // Coletar dados do formulário
             const dados = {
-                nome: document.getElementById('nome_beneficiario').value || 'Não informado',
-                placa: document.getElementById('placa').value || 'Não informado',
-                veiculo: document.getElementById('veiculo').value || 'Não informado',
-                data: document.getElementById('data_sinistro').value,
-                regulagem: parseFloat(document.getElementById('valor_regulagem').value) || 0,
-                participacao: parseFloat(document.getElementById('valor_participacao').value) || 0,
-                orcamento: parseFloat(document.getElementById('orcamento_oficina').value) || 0,
-                diasRep: document.getElementById('dias_reparacao').value || '15',
-                diasCarro: parseInt(document.getElementById('dias_carro_reserva').value) || 0
+                nome: getVal('nome_beneficiario', 'Não informado'),
+                placa: getVal('placa', 'Não informado'),
+                veiculo: getVal('veiculo', 'Não informado'),
+                data: getVal('data_sinistro'),
+                regulagem: parseFloat(getVal('valor_regulagem', '0')) || 0,
+                participacao: parseFloat(getVal('valor_participacao', '0')) || 0,
+                orcamento: parseFloat(getVal('orcamento_oficina', '0')) || 0,
+                diasRep: getVal('dias_reparacao', '15'),
+                diasCarro: parseInt(getVal('dias_carro_reserva', '0')) || 0
             };
             
             // Calcular valores
