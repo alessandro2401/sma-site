@@ -395,10 +395,64 @@
                     opcao3_valor_autorizado: result.comparacao.opcao_3_oficina_antecipada.valor_autorizado
                 };
                 exibirResultado(result);
+                // Enviar dados para API do Google Sheets
+                enviarParaAPISMA(dados, result);
             } catch (error) {
                 alert('Erro ao calcular: ' + error.message);
             }
         });
+
+        // Função para enviar dados à API
+        async function enviarParaAPISMA(dadosEntrada, resultado) {
+            try {
+                const dadosAPI = {
+                    nomeBeneficiario: document.getElementById('nome_beneficiario').value || '',
+                    placaVeiculo: document.getElementById('placa_veiculo').value || '',
+                    modeloVeiculo: document.getElementById('veiculo').value || '',
+                    dataAberturaSinistro: document.getElementById('data_sinistro').value || '',
+                    valorRegulagem: dadosEntrada.valor_regulagem || 0,
+                    valorParticipacao: dadosEntrada.valor_participacao || 0,
+                    orcamentoOficina: dadosEntrada.orcamento_oficina || 0,
+                    valorContraproposta: dadosEntrada.contraproposta || 0,
+                    diasReparacao: dadosEntrada.dias_reparo || 0,
+                    diasCarroReserva: dadosEntrada.dias_carro_reserva || 0,
+                    valorCarroReserva: (dadosEntrada.dias_carro_reserva || 0) * 75,
+                    valorBase: resultado.calculos.valor_liquido || 0,
+                    opcao1Valor: resultado.comparacao.opcao_1_aguardar_reparo.custo_total || 0,
+                    opcao2Valor: resultado.comparacao.opcao_2_acordo_dinheiro.valor_recebido || 0,
+                    opcao3Valor: resultado.comparacao.opcao_3_oficina_antecipada.valor_total || 0,
+                    opcaoRecomendada: resultado.comparacao.recomendacao || '',
+                    valorOperacao: resultado.acordo_associado.financiamento.valor_operacao || 0,
+                    taxaJuros: resultado.acordo_associado.financiamento.taxa_mensal_pct || 0,
+                    totalPagar: resultado.acordo_associado.financiamento.total_geral || 0,
+                    custoFinanceiro: resultado.acordo_associado.financiamento.custo_financeiro || 0,
+                    percentualCusto: resultado.acordo_associado.financiamento.percentual_custo || 0,
+                    numeroParcelas: resultado.acordo_associado.financiamento.parcelas.length || 0,
+                    parcela1Data: resultado.acordo_associado.financiamento.parcelas[0]?.vencimento || '',
+                    parcela1Valor: resultado.acordo_associado.financiamento.parcelas[0]?.valor || 0,
+                    parcela2Data: resultado.acordo_associado.financiamento.parcelas[1]?.vencimento || '',
+                    parcela2Valor: resultado.acordo_associado.financiamento.parcelas[1]?.valor || 0,
+                    parcela3Data: resultado.acordo_associado.financiamento.parcelas[2]?.vencimento || '',
+                    parcela3Valor: resultado.acordo_associado.financiamento.parcelas[2]?.valor || 0,
+                    parcela4Data: resultado.acordo_associado.financiamento.parcelas[3]?.vencimento || '',
+                    parcela4Valor: resultado.acordo_associado.financiamento.parcelas[3]?.valor || 0
+                };
+
+                const response = await fetch('https://api-calculadoras-sheets-ey8rudnir.vercel.app/api/registrar-calculo-sma', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dadosAPI)
+                });
+
+                if (!response.ok) {
+                    console.error('Erro ao enviar dados para API:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Erro ao enviar dados para API:', error);
+            }
+        }
 
         function calcularSMA(dados) {
             // Cálculos da Calculadora SMA - Fórmulas baseadas na planilha original
