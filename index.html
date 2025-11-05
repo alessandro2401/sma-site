@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -200,6 +201,35 @@
             .grid-2 { grid-template-columns: 1fr; }
             .opcoes-grid { grid-template-columns: 1fr; }
         }
+        /* Estilos para feedback de validação da contraproposta */
+        .feedback-validacao {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+        .feedback-validacao.show { display: block; }
+        .feedback-aprovado {
+            background-color: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .feedback-reprovado {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .feedback-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+            font-size: 13px;
+            margin-top: 8px;
+            padding: 10px;
+            border-radius: 5px;
+        }
         @media print {
             .header, .card:first-child, .btn, .btn-action { display: none !important; }
             body { background: white; padding: 0; }
@@ -272,14 +302,6 @@
                     </div>
 
                     <div class="form-section">
-                        <h3>Contraproposta (Opcional)</h3>
-                        <div class="form-group">
-                            <label>Valor da Contraproposta (R$):</label>
-                            <input type="number" id="contraproposta" step="0.01" value="0">
-                        </div>
-                    </div>
-
-                    <div class="form-section">
                         <h3>Configurações do Financiamento</h3>
                         <div class="grid-2">
                             <div class="form-group">
@@ -346,6 +368,21 @@
 
                 <div id="recomendacao"></div>
 
+                <div class="form-section" id="contraproposta-section" style="margin-top: 20px; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #764ba2; border-bottom: 2px solid #667eea; padding-bottom: 10px;">⚖️ Análise de Contraproposta</h3>
+                    <div class="form-group">
+                        <label for="contraproposta_input">Valor Proposto pelo Associado (R$):</label>
+                        <input type="number" id="contraproposta_input" step="0.01" placeholder="Insira o valor da contraproposta" style="margin-bottom: 10px;" value="0">
+                        <button onclick="validarContraproposta()" style="margin-top: 10px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">🧮 Calcular com Contraproposta</button>
+                        <div id="feedback-contraproposta" class="feedback-validacao" style="display: none; margin-top: 15px;"></div>
+                        <div id="info-limites" class="feedback-info" style="display: none; margin-top: 15px;">
+                            <strong>Faixa de negociação aceitável:</strong><br>
+                            Mínimo: R$ <span id="limite-minimo">0,00</span><br>
+                            Máximo: R$ <span id="limite-maximo">0,00</span>
+                        </div>
+                    </div>
+                </div>
+
                 <h3>💳 Uso da Associação (Detalhamento do Financiamento - Acordo)</h3>
                 <div class="info-box">
                     <strong>Valor da Operação:</strong> <span id="valorOperacao"></span><br>
@@ -382,7 +419,7 @@
                 orcamento_oficina: parseFloat(document.getElementById('orcamento_oficina').value) || parseFloat(document.getElementById('valor_regulagem').value),
                 dias_reparo: parseInt(document.getElementById('dias_reparo').value),
                 dias_carro_reserva: parseInt(document.getElementById('dias_carro_reserva').value) || 0,
-                contraproposta: parseFloat(document.getElementById('contraproposta').value),
+                contraproposta: parseFloat(document.getElementById('contraproposta_input').value) || 0,
                 taxa_juros: parseFloat(document.getElementById('taxa_juros').value) / 100,
                 n_parcelas: parseInt(document.getElementById('n_parcelas').value)
             };
@@ -498,15 +535,34 @@
 
             // Opção 2: Acordo em Dinheiro
             const opcao2_valor_base = valor_acordo_associado;
-            const opcao2_valor_recebido = contraproposta > 0 ? contraproposta : opcao2_valor_base;
             const opcao2_prazo = "7 a 10 dias após acordo assinado";
 
             // Opção 3: Oficina Antecipada
             const opcao3_valor_autorizado = valor_autorizacao_oficina;
             const opcao3_prazo = "Até 10 dias após finalização do serviço";
 
+            // VALIDAÇÃO DA CONTRAPROPOSTA
+            const limiteInferior = valor_acordo_associado * 1.02;
+            const limiteSuperior = orcamento_oficina * 0.55;
+            let validacao_contraproposta = null;
+            if (contraproposta > 0) {
+                if (contraproposta >= limiteInferior && contraproposta <= limiteSuperior) {
+                    validacao_contraproposta = { status: 'aprovada', valor: contraproposta, mensagem: 'Contraproposta APROVADA - Valor dentro da faixa permitida.' };
+                } else if (contraproposta < limiteInferior) {
+                    validacao_contraproposta = { status: 'reprovada', valor: contraproposta, mensagem: `Contraproposta REPROVADA - Valor R$ ${(limiteInferior - contraproposta).toFixed(2).replace('.', ',')} abaixo do mínimo aceitável.` };
+                } else { // maior que o superior
+                    validacao_contraproposta = { status: 'reprovada', valor: contraproposta, mensagem: `Contraproposta REPROVADA - Valor R$ ${(contraproposta - limiteSuperior).toFixed(2).replace('.', ',')} acima do máximo permitido.` };
+                }
+                validacao_contraproposta.limiteMin = limiteInferior;
+                validacao_contraproposta.limiteMax = limiteSuperior;
+            }
+
             // Financiamento
-            const valor_operacao = opcao2_valor_recebido;
+            // Define o valor da operação para o financiamento com base na validação
+            const valor_operacao = (validacao_contraproposta && validacao_contraproposta.status === 'aprovada') 
+                ? validacao_contraproposta.valor 
+                : valor_acordo_associado;
+
             const taxa_mensal_pct = taxa_juros * 100;
             const valor_parcela = valor_operacao * (taxa_juros * Math.pow(1 + taxa_juros, n_parcelas)) / (Math.pow(1 + taxa_juros, n_parcelas) - 1);
             const total_geral = valor_parcela * n_parcelas;
@@ -527,6 +583,7 @@
             }
 
             return {
+                validacao_contraproposta,
                 observacoes: [
                     "Cálculo baseado nos valores informados",
                     "Taxas e prazos podem variar conforme regulamento"
@@ -544,339 +601,246 @@
                         desvantagens: ["Aguardar reparo", "Sem dinheiro em mãos"]
                     },
                     opcao_2_acordo_dinheiro: {
-                        valor_recebido: opcao2_valor_recebido,
+                        valor_recebido: valor_acordo_associado,
                         prazo: opcao2_prazo,
                         vantagens: ["Dinheiro imediato", "Liberdade de escolha"],
                         desvantagens: ["Valor pode ser menor", "Responsabilidade pelo reparo"]
                     },
                     opcao_3_oficina_antecipada: {
-                        valor_autorizado: opcao3_valor_autorizado,
-                        custo_carro_reserva: custo_carro_reserva,
-                        valor_total: opcao3_valor_autorizado + custo_carro_reserva,
-                        prazo: opcao3_prazo
+                        valor_autorizado: valor_autorizacao_oficina,
+                        valor_total: valor_autorizacao_oficina + custo_carro_reserva,
+                        prazo: opcao3_prazo,
+                        vantagens: ["Reparo antecipado", "Menor tempo de espera"],
+                        desvantagens: ["Custo financeiro maior"]
                     },
-                    recomendacao: (() => {
-                        const opcao1_total = (valor_regulagem - valor_participacao) + custo_carro_reserva;
-                        const opcao2_total = opcao2_valor_recebido; // Não inclui carro reserva (dinheiro imediato)
-                        const opcao3_total = opcao3_valor_autorizado + custo_carro_reserva;
-                        
-                        const opcoes = [
-                            { nome: "Opção 1 (Aguardar Reparo)", valor: opcao1_total },
-                            { nome: "Opção 2 (Acordo em Dinheiro)", valor: opcao2_total },
-                            { nome: "Opção 3 (Oficina Antecipada)", valor: opcao3_total }
-                        ];
-                        const menorOpcao = opcoes.reduce((min, opcao) => opcao.valor < min.valor ? opcao : min);
-                        return menorOpcao.nome + " é mais vantajosa (menor valor)";
-                    })()
+                    recomendacao: (valor_acordo_associado > valor_autorizacao_oficina) ? "Opção 2" : "Opção 3"
                 },
                 acordo_associado: {
                     financiamento: {
                         valor_operacao: valor_operacao,
-                        taxa_mensal_pct: taxa_mensal_pct,
+                        taxa_mensal_pct: taxa_mensal_pct.toFixed(2) + '%',
                         total_geral: total_geral,
                         custo_financeiro: custo_financeiro,
-                        percentual_custo: percentual_custo,
+                        percentual_custo: percentual_custo.toFixed(2) + '%',
                         parcelas: parcelas
                     }
                 }
             };
         }
 
-        function exibirResultado(result) {
-            resultado.classList.add('show');
-            resultado.scrollIntoView({ behavior: 'smooth' });
+        function exibirResultado(resultado) {
+                        // Exibir feedback da contraproposta
+            const feedbackContainer = document.getElementById('feedback-contraproposta');
+            const infoLimitesContainer = document.getElementById('info-limites');
+
+            if (resultado.validacao_contraproposta) {
+                feedbackContainer.style.display = 'block';
+                infoLimitesContainer.style.display = 'block';
+                feedbackContainer.textContent = resultado.validacao_contraproposta.mensagem;
+                feedbackContainer.className = 'feedback-validacao show';
+                
+                if (resultado.validacao_contraproposta.status === 'aprovada') {
+                    feedbackContainer.classList.add('feedback-aprovado');
+                    feedbackContainer.classList.remove('feedback-reprovado');
+                } else {
+                    feedbackContainer.classList.add('feedback-reprovado');
+                    feedbackContainer.classList.remove('feedback-aprovado');
+                }
+
+                document.getElementById('limite-minimo').textContent = formatarMoeda(resultado.validacao_contraproposta.limiteMin, '');
+                document.getElementById('limite-maximo').textContent = formatarMoeda(resultado.validacao_contraproposta.limiteMax, '');
+
+            } else {
+                feedbackContainer.style.display = 'none';
+                infoLimitesContainer.style.display = 'none';
+            }
+
+            document.getElementById('resultado').classList.add('show');
+            document.getElementById('resultado').scrollIntoView({ behavior: 'smooth' });
 
             // Preencher dados do beneficiário
             document.getElementById('dadoNome').textContent = document.getElementById('nome_beneficiario').value;
-            document.getElementById('dadoPlaca').textContent = document.getElementById('placa_veiculo').value.toUpperCase();
+            document.getElementById('dadoPlaca').textContent = document.getElementById('placa_veiculo').value;
             document.getElementById('dadoVeiculo').textContent = document.getElementById('veiculo').value;
-            const dataSinistro = document.getElementById('data_sinistro').value;
-            if (dataSinistro) {
-                const [ano, mes, dia] = dataSinistro.split('-');
-                document.getElementById('dadoDataSinistro').textContent = `${dia}/${mes}/${ano}`;
-            }
+            document.getElementById('dadoDataSinistro').textContent = new Date(document.getElementById('data_sinistro').value + 'T00:00:00').toLocaleDateString('pt-BR');
 
-            const observacoes = document.getElementById('observacoes');
-            observacoes.innerHTML = '';
-            result.observacoes.forEach(obs => {
-                observacoes.innerHTML += `<div class="alert alert-info">${obs}</div>`;
+            // Preencher observações
+            const obsContainer = document.getElementById('observacoes');
+            obsContainer.innerHTML = '';
+            resultado.observacoes.forEach(obs => {
+                const p = document.createElement('p');
+                p.className = 'alert alert-info';
+                p.textContent = obs;
+                obsContainer.appendChild(p);
             });
 
-            document.getElementById('valorLiquido').textContent = 
-                'R$ ' + result.calculos.valor_liquido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            // Preencher valor líquido
+            document.getElementById('valorLiquido').textContent = formatarMoeda(resultado.calculos.valor_liquido);
 
-            const opcoesGrid = document.getElementById('opcoesGrid');
-            opcoesGrid.innerHTML = '';
+            // Preencher opções
+            const opcoesContainer = document.getElementById('opcoesGrid');
+            opcoesContainer.innerHTML = '';
+            const opcoes = resultado.comparacao;
 
-            const opcao1 = result.comparacao.opcao_1_aguardar_reparo;
-            opcoesGrid.innerHTML += `
-                <div class="opcao-card">
-                    <h4>📅 Opção 1: Aguardar Reparo</h4>
-                    <div class="opcao-valor">Veículo Reparado</div>
-                    <div class="opcao-info">Prazo: ${opcao1.prazo}</div>
-                    <div class="opcao-info">Custo do Sinistro: R$ ${opcao1.custo.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    ${opcao1.custo_carro_reserva > 0 ? `<div class="opcao-info">Carro Reserva: R$ ${opcao1.custo_carro_reserva.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
-                    <div class="opcao-info" style="font-weight: bold; font-size: 1.1em; color: #764ba2; margin-top: 8px;">TOTAL: R$ ${opcao1.custo_total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    <div class="vantagens">
-                        <h5>Vantagens:</h5>
-                        <ul>${opcao1.vantagens.map(v => `<li>${v}</li>`).join('')}</ul>
-                    </div>
-                    <div class="desvantagens">
-                        <h5>Desvantagens:</h5>
-                        <ul>${opcao1.desvantagens.map(d => `<li>${d}</li>`).join('')}</ul>
-                    </div>
+            // Card Opção 1
+            const card1 = criarCardOpcao(
+                'Opção 1: Aguardar Reparo na Oficina',
+                opcoes.opcao_1_aguardar_reparo.custo_total,
+                `Custo Total (Peças + Mão de Obra): ${formatarMoeda(opcoes.opcao_1_aguardar_reparo.custo)}`,
+                `Custo Carro Reserva: ${formatarMoeda(opcoes.opcao_1_aguardar_reparo.custo_carro_reserva)}`,
+                `Prazo Estimado: ${opcoes.opcao_1_aguardar_reparo.prazo}`,
+                opcoes.opcao_1_aguardar_reparo.vantagens,
+                opcoes.opcao_1_aguardar_reparo.desvantagens,
+                opcoes.recomendacao === 'Opção 1'
+            );
+            opcoesContainer.appendChild(card1);
+
+            // Card Opção 2
+            const card2 = criarCardOpcao(
+                'Opção 2: Acordo em Dinheiro',
+                opcoes.opcao_2_acordo_dinheiro.valor_recebido,
+                'Valor a ser recebido pelo associado.',
+                `Prazo para pagamento: ${opcoes.opcao_2_acordo_dinheiro.prazo}`,
+                '',
+                opcoes.opcao_2_acordo_dinheiro.vantagens,
+                opcoes.opcao_2_acordo_dinheiro.desvantagens,
+                opcoes.recomendacao === 'Opção 2'
+            );
+            opcoesContainer.appendChild(card2);
+
+            // Card Opção 3
+            const card3 = criarCardOpcao(
+                'Opção 3: Reparo em Oficina com Antecipação',
+                opcoes.opcao_3_oficina_antecipada.valor_total,
+                `Valor Autorizado para Oficina: ${formatarMoeda(opcoes.opcao_3_oficina_antecipada.valor_autorizado)}`,
+                `Custo Carro Reserva: ${formatarMoeda(opcoes.opcao_1_aguardar_reparo.custo_carro_reserva)}`,
+                `Prazo para pagamento: ${opcoes.opcao_3_oficina_antecipada.prazo}`,
+                opcoes.opcao_3_oficina_antecipada.vantagens,
+                opcoes.opcao_3_oficina_antecipada.desvantagens,
+                opcoes.recomendacao === 'Opção 3'
+            );
+            opcoesContainer.appendChild(card3);
+
+            // Preencher recomendação
+            const recomendacaoContainer = document.getElementById('recomendacao');
+            recomendacaoContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <strong>Recomendação:</strong> A ${opcoes.recomendacao} parece ser a mais vantajosa neste cenário.
                 </div>
             `;
 
-            const opcao2 = result.comparacao.opcao_2_acordo_dinheiro;
-            opcoesGrid.innerHTML += `
-                <div class="opcao-card destaque">
-                    <h4>💸 Opção 2: Acordo em Dinheiro</h4>
-                    <div class="opcao-valor">R$ ${opcao2.valor_recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                    <div class="opcao-info">Prazo: ${opcao2.prazo}</div>
-                    <div class="vantagens">
-                        <h5>Vantagens:</h5>
-                        <ul>${opcao2.vantagens.map(v => `<li>${v}</li>`).join('')}</ul>
-                    </div>
-                    <div class="desvantagens">
-                        <h5>Desvantagens:</h5>
-                        <ul>${opcao2.desvantagens.map(d => `<li>${d}</li>`).join('')}</ul>
-                    </div>
-                </div>
-            `;
+            // Preencher dados do financiamento
+            const financiamento = resultado.acordo_associado.financiamento;
+            document.getElementById('valorOperacao').textContent = formatarMoeda(financiamento.valor_operacao);
+            document.getElementById('taxaJuros').textContent = financiamento.taxa_mensal_pct;
+            document.getElementById('totalPagar').textContent = formatarMoeda(financiamento.total_geral);
+            document.getElementById('custoFinanceiro').textContent = `${formatarMoeda(financiamento.custo_financeiro)} (${financiamento.percentual_custo})`;
 
-            const opcao3 = result.comparacao.opcao_3_oficina_antecipada;
-            opcoesGrid.innerHTML += `
-                <div class="opcao-card">
-                    <h4>🔧 Opção 3: Oficina Antecipada</h4>
-                    <div class="opcao-valor">R$ ${opcao3.valor_autorizado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                    <div class="opcao-info">Prazo: ${opcao3.prazo}</div>
-                    ${opcao3.custo_carro_reserva > 0 ? `<div class="opcao-info">Carro Reserva: R$ ${opcao3.custo_carro_reserva.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
-                    ${opcao3.custo_carro_reserva > 0 ? `<div class="opcao-info" style="font-weight: bold; font-size: 1.1em; color: #764ba2; margin-top: 8px;">TOTAL: R$ ${opcao3.valor_total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
-                </div>
-            `;
-
-            document.getElementById('recomendacao').innerHTML = 
-                `<div class="alert alert-warning"><strong>Recomendação:</strong> ${result.comparacao.recomendacao}</div>`;
-
-            const fin = result.acordo_associado.financiamento;
-            document.getElementById('valorOperacao').textContent = 
-                'R$ ' + fin.valor_operacao.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            document.getElementById('taxaJuros').textContent = 
-                fin.taxa_mensal_pct.toFixed(2) + '% ao mês';
-            document.getElementById('totalPagar').textContent = 
-                'R$ ' + fin.total_geral.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            document.getElementById('custoFinanceiro').textContent = 
-                'R$ ' + fin.custo_financeiro.toLocaleString('pt-BR', {minimumFractionDigits: 2}) + 
-                ' (' + fin.percentual_custo.toFixed(2) + '%)';
-
-            const tabelaParcelas = document.getElementById('tabelaParcelas').querySelector('tbody');
-            tabelaParcelas.innerHTML = '';
-            fin.parcelas.forEach(p => {
-                tabelaParcelas.innerHTML += `
-                    <tr>
-                        <td>${p.numero}ª</td>
-                        <td>${p.vencimento}</td>
-                        <td>R$ ${p.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                `;
+            // Preencher tabela de parcelas
+            const tabelaBody = document.getElementById('tabelaParcelas').getElementsByTagName('tbody')[0];
+            tabelaBody.innerHTML = '';
+            financiamento.parcelas.forEach(p => {
+                const row = tabelaBody.insertRow();
+                row.insertCell(0).textContent = p.numero;
+                row.insertCell(1).textContent = p.vencimento;
+                row.insertCell(2).textContent = formatarMoeda(p.valor);
             });
         }
 
-        function gerarConteudoImpressao() {
-            // Função auxiliar para obter valor com segurança
-            const getVal = (id, defaultVal = '') => {
-                const el = document.getElementById(id);
-                return el && el.value ? el.value : defaultVal;
-            };
+        function criarCardOpcao(titulo, valor, info1, info2, info3, vantagens, desvantagens, destaque) {
+            const card = document.createElement('div');
+            card.className = 'opcao-card' + (destaque ? ' destaque' : '');
             
-            // Coletar dados do formulário
-            const dados = {
-                nome: getVal('nome_beneficiario', 'Não informado'),
-                placa: getVal('placa_veiculo', 'Não informado'),
-                veiculo: getVal('veiculo', 'Não informado'),
-                data: getVal('data_sinistro'),
-                regulagem: parseFloat(getVal('valor_regulagem', '0')) || 0,
-                participacao: parseFloat(getVal('valor_participacao', '0')) || 0,
-                orcamento: parseFloat(getVal('orcamento_oficina', '0')) || 0,
-                diasRep: getVal('dias_reparacao', '15'),
-                diasCarro: parseInt(getVal('dias_carro_reserva', '0')) || 0
-            };
-            
-            // Calcular valores
-            const valorBase = dados.regulagem - dados.participacao;
-            const custoCarroReserva = dados.diasCarro * 75;
-            
-            // Opção 1
-            const op1Custo = valorBase;
-            const op1Total = op1Custo + custoCarroReserva;
-            
-            // Opção 2 (usar valores calculados se disponíveis)
-            const op2Valor = window.ultimoCalculo?.opcao2_valor_recebido || valorBase * 0.65;
-            
-            // Opção 3
-            const op3Valor = window.ultimoCalculo?.opcao3_valor_autorizado || (dados.orcamento > 0 ? dados.orcamento * 0.59 : valorBase * 0.59);
-            const op3Total = op3Valor + custoCarroReserva;
-            
-            // Determinar recomendada
-            const opcoes = [
-                { id: 1, nome: 'Opção 1 (Aguardar Reparo)', valor: op1Total },
-                { id: 2, nome: 'Opção 2 (Acordo em Dinheiro)', valor: op2Valor },
-                { id: 3, nome: 'Opção 3 (Oficina Antecipada)', valor: op3Total }
-            ];
-            const menor = opcoes.reduce((min, op) => op.valor < min.valor ? op : min);
-            
-            // Formatar data
-            const formatData = (d) => {
-                if (!d) return 'Não informado';
-                const [a, m, dia] = d.split('-');
-                return `${dia}/${m}/${a}`;
-            };
-            
-            // Formatar moeda
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-            
-            // Gerar HTML
-            return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Relatório SMA - ${dados.nome}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { size: A4; margin: 15mm; }
-        body { font-family: Arial, sans-serif; font-size: 11pt; color: #333; background: white; padding: 20px; }
-        .header { text-align: center; padding: 20px 0; border-bottom: 3px solid #2c5aa0; margin-bottom: 25px; }
-        .header h1 { color: #2c5aa0; font-size: 20pt; margin-bottom: 5px; }
-        .header .subtitle { color: #666; font-size: 11pt; margin-bottom: 15px; }
-        .header .nome { background: #2c5aa0; color: white; padding: 10px 20px; display: inline-block; border-radius: 5px; font-size: 14pt; font-weight: bold; margin-top: 10px; }
-        .section { margin-bottom: 25px; page-break-inside: avoid; }
-        .section-title { background: #2c5aa0; color: white; padding: 8px 15px; font-size: 13pt; font-weight: bold; margin-bottom: 10px; border-radius: 3px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        table th { background: #f0f0f0; color: #333; font-weight: bold; text-align: left; padding: 10px; border: 1px solid #ddd; }
-        table td { padding: 10px; border: 1px solid #ddd; }
-        table tr:nth-child(even) { background: #f9f9f9; }
-        .valor-destaque { font-weight: bold; color: #2c5aa0; font-size: 12pt; }
-        .total-row { background: #e8f0fe !important; font-weight: bold; }
-        .total-row td { color: #2c5aa0; font-size: 12pt; }
-        .opcao-card { border: 2px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; }
-        .opcao-card.recomendada { border-color: #4caf50; background: #f1f8f4; }
-        .opcao-card .opcao-header { font-size: 13pt; font-weight: bold; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #ddd; }
-        .opcao-card.recomendada .opcao-header { color: #4caf50; }
-        .opcao-card .badge { background: #4caf50; color: white; padding: 3px 10px; border-radius: 3px; font-size: 9pt; margin-left: 10px; }
-        .opcao-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .opcao-info-item { padding: 8px; background: white; border-radius: 3px; }
-        .opcao-info-label { font-size: 9pt; color: #666; margin-bottom: 3px; }
-        .opcao-info-value { font-size: 11pt; font-weight: bold; color: #333; }
-        .recomendacao-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 3px; }
-        .recomendacao-box strong { color: #856404; font-size: 12pt; }
-        .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center; font-size: 9pt; color: #666; }
-        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>💰 Calculadora SMA</h1>
-        <div class="subtitle">Socorro Mútuo Acordo - Movimento Mais Brasil</div>
-        <div class="nome">${dados.nome}</div>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">📋 Dados do Sinistro</div>
-        <table>
-            <tr><th style="width:40%">Item</th><th>Descrição</th></tr>
-            <tr><td>Associado</td><td>${dados.nome}</td></tr>
-            <tr><td>Veículo</td><td>${dados.veiculo}</td></tr>
-            <tr><td>Placa</td><td>${dados.placa}</td></tr>
-            <tr><td>Data do Sinistro</td><td>${formatData(dados.data)}</td></tr>
-            <tr><td>Valor da Regulagem</td><td class="valor-destaque">${fmt(dados.regulagem)}</td></tr>
-            <tr><td>Valor da Participação/Franquia</td><td class="valor-destaque">${fmt(dados.participacao)}</td></tr>
-            <tr><td>Orçamento da Oficina/CILIA</td><td>${dados.orcamento > 0 ? fmt(dados.orcamento) : 'Não informado'}</td></tr>
-            <tr><td>Dias Previstos para Reparação</td><td>${dados.diasRep}</td></tr>
-            <tr><td>Dias de Carro Reserva</td><td>${dados.diasCarro}</td></tr>
-        </table>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">💵 Valor Base para Cálculo</div>
-        <table>
-            <tr class="total-row"><td style="width:70%">Valor Base (Regulagem - Participação)</td><td class="valor-destaque">${fmt(valorBase)}</td></tr>
-        </table>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">⚡ Opções de Pagamento</div>
-        
-        <div class="opcao-card ${menor.id === 1 ? 'recomendada' : ''}">
-            <div class="opcao-header">🚗 Opção 1: Aguardar Reparo${menor.id === 1 ? ' <span class="badge">✓ RECOMENDADA</span>' : ''}</div>
-            <div class="opcao-info">
-                <div class="opcao-info-item"><div class="opcao-info-label">Prazo</div><div class="opcao-info-value">${dados.diasRep} dias úteis</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">Custo do Sinistro</div><div class="opcao-info-value">${fmt(op1Custo)}</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">Carro Reserva</div><div class="opcao-info-value">${fmt(custoCarroReserva)}</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">TOTAL</div><div class="opcao-info-value" style="color:#2c5aa0;font-size:13pt">${fmt(op1Total)}</div></div>
-            </div>
-        </div>
-        
-        <div class="opcao-card ${menor.id === 2 ? 'recomendada' : ''}">
-            <div class="opcao-header">💰 Opção 2: Acordo em Dinheiro${menor.id === 2 ? ' <span class="badge">✓ RECOMENDADA</span>' : ''}</div>
-            <div class="opcao-info">
-                <div class="opcao-info-item"><div class="opcao-info-label">Valor Recebido</div><div class="opcao-info-value" style="color:#2c5aa0;font-size:13pt">${fmt(op2Valor)}</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">Prazo</div><div class="opcao-info-value">7 a 10 dias após acordo assinado</div></div>
-            </div>
-        </div>
-        
-        <div class="opcao-card ${menor.id === 3 ? 'recomendada' : ''}">
-            <div class="opcao-header">🔧 Opção 3: Oficina Antecipada${menor.id === 3 ? ' <span class="badge">✓ RECOMENDADA</span>' : ''}</div>
-            <div class="opcao-info">
-                <div class="opcao-info-item"><div class="opcao-info-label">Valor Autorizado</div><div class="opcao-info-value">${fmt(op3Valor)}</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">Prazo</div><div class="opcao-info-value">Até 10 dias após finalização</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">Carro Reserva</div><div class="opcao-info-value">${fmt(custoCarroReserva)}</div></div>
-                <div class="opcao-info-item"><div class="opcao-info-label">TOTAL</div><div class="opcao-info-value" style="color:#2c5aa0;font-size:13pt">${fmt(op3Total)}</div></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="recomendacao-box">
-        <strong>💡 Recomendação:</strong> ${menor.nome} é mais vantajosa (menor valor: ${fmt(menor.valor)})
-    </div>
-    
-    <div class="footer">
-        <div style="margin-bottom:10px"><strong>Data de Geração:</strong> ${new Date().toLocaleString('pt-BR')}</div>
-        <div>Calculadora SMA - Socorro Mútuo Acordo<br>Movimento Mais Brasil - Antecipação de Valores de Reparo</div>
-    </div>
-</body>
-</html>`;
+            let info3HTML = info3 ? `<p class="opcao-info">${info3}</p>` : '';
+
+            card.innerHTML = `
+                <h4>${titulo}</h4>
+                <div class="opcao-valor">${formatarMoeda(valor)}</div>
+                <p class="opcao-info">${info1}</p>
+                <p class="opcao-info">${info2}</p>
+                ${info3HTML}
+                <div class="vantagens">
+                    <h5>Vantagens</h5>
+                    <ul>${vantagens.map(v => `<li>${v}</li>`).join('')}</ul>
+                </div>
+                <div class="desvantagens">
+                    <h5>Desvantagens</h5>
+                    <ul>${desvantagens.map(d => `<li>${d}</li>`).join('')}</ul>
+                </div>
+            `;
+            return card;
         }
-        
+
+        function formatarMoeda(valor, simbolo = 'R$ ') {
+            if (isNaN(valor)) return simbolo + '0,00';
+            return simbolo + valor.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+\,)/g, "$1.");
+        }
+
+        // Funções de Impressão e PDF
         function imprimirResultado() {
-            const conteudo = gerarConteudoImpressao();
-            const janelaImpressao = window.open('', '_blank', 'width=800,height=600');
-            janelaImpressao.document.write(conteudo);
-            janelaImpressao.document.close();
-            setTimeout(() => {
-                janelaImpressao.focus();
-                janelaImpressao.print();
-            }, 250);
+            window.print();
         }
 
-        function gerarPDF() {
-            const conteudo = gerarConteudoImpressao();
-            const nomeBeneficiario = document.getElementById('nome_beneficiario').value || 'Associado';
-            const nomeArquivo = `Relatorio_SMA_${nomeBeneficiario.replace(/\s+/g, '_')}.html`;
+        async function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const resultadoElement = document.getElementById('resultado');
+            const originalDisplay = resultadoElement.style.display;
+            resultadoElement.style.display = 'block'; // Garante que o conteúdo seja visível para captura
+
+            // Adicionar um título ao PDF
+            doc.setFontSize(18);
+            doc.text("Relatório de Cálculo SMA", 14, 22);
+
+            // Usar html2canvas para renderizar o HTML
+            const canvas = await html2canvas(resultadoElement, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
             
-            const blob = new Blob([conteudo], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = nomeArquivo;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            doc.addImage(imgData, 'PNG', 0, 30, pdfWidth, pdfHeight);
             
-            alert('✅ Arquivo HTML gerado!\n\n📄 Para converter em PDF:\n1. Abra o arquivo baixado\n2. Pressione Ctrl+P (ou Cmd+P no Mac)\n3. Selecione "Salvar como PDF"\n4. Clique em "Salvar"');
+            resultadoElement.style.display = originalDisplay; // Restaura o display original
+
+            doc.save("relatorio_sma.pdf");
         }
+
+        // Carregar a biblioteca jsPDF e html2canvas dinamicamente
+        // Função para validar contraproposta ao clicar no botão
+        function validarContraproposta() {
+            const dados = {
+                valor_regulagem: parseFloat(document.getElementById('valor_regulagem').value),
+                valor_participacao: parseFloat(document.getElementById('valor_participacao').value),
+                orcamento_oficina: parseFloat(document.getElementById('orcamento_oficina').value) || parseFloat(document.getElementById('valor_regulagem').value),
+                dias_reparo: parseInt(document.getElementById('dias_reparo').value),
+                dias_carro_reserva: parseInt(document.getElementById('dias_carro_reserva').value) || 0,
+                contraproposta: parseFloat(document.getElementById('contraproposta_input').value) || 0,
+                taxa_juros: parseFloat(document.getElementById('taxa_juros').value) / 100,
+                n_parcelas: parseInt(document.getElementById('n_parcelas').value)
+            };
+
+            try {
+                const result = calcularSMA(dados);
+                exibirResultado(result);
+            } catch (error) {
+                console.error("Erro ao calcular com contraproposta:", error);
+                alert("Ocorreu um erro ao tentar calcular com a contraproposta. Verifique os valores e tente novamente.");
+            }
+        }
+
+        (function() {
+            const scriptJsPDF = document.createElement('script');
+            scriptJsPDF.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            document.head.appendChild(scriptJsPDF);
+
+            const scriptHtml2Canvas = document.createElement('script');
+            scriptHtml2Canvas.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            document.head.appendChild(scriptHtml2Canvas);
+        })();
+
     </script>
 </body>
 </html>
-
