@@ -542,8 +542,9 @@
             const opcao3_prazo = "Até 10 dias após finalização do serviço";
 
             // VALIDAÇÃO DA CONTRAPROPOSTA
-            const limiteInferior = valor_acordo_associado * 1.02;
-            const limiteSuperior = orcamento_oficina * 0.55;
+            // Faixa de negociação: 100% a 112% do valor do acordo calculado
+            const limiteInferior = valor_acordo_associado * 1.00;  // 100% do valor do acordo
+            const limiteSuperior = valor_acordo_associado * 1.12;  // 112% do valor do acordo (faixa de 12%)
             let validacao_contraproposta = null;
             if (contraproposta > 0) {
                 if (contraproposta >= limiteInferior && contraproposta <= limiteSuperior) {
