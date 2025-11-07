@@ -827,7 +827,7 @@
 
         async function gerarPDF() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF('p', 'mm', 'a4');
 
             const resultadoElement = document.getElementById('resultado');
             const originalDisplay = resultadoElement.style.display;
@@ -837,15 +837,34 @@
             doc.setFontSize(18);
             doc.text("Relatório de Cálculo SMA", 14, 22);
 
-            // Usar html2canvas para renderizar o HTML
-            const canvas = await html2canvas(resultadoElement, { scale: 2 });
+            // Usar html2canvas para renderizar o HTML com configurações otimizadas
+            const canvas = await html2canvas(resultadoElement, { 
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                windowHeight: resultadoElement.scrollHeight
+            });
             const imgData = canvas.toDataURL('image/png');
             
             const imgProps = doc.getImageProperties(imgData);
             const pdfWidth = doc.internal.pageSize.getWidth();
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            const pageHeight = doc.internal.pageSize.getHeight();
+            
+            let heightLeft = pdfHeight;
+            let position = 30; // Posição inicial (após o título)
 
-            doc.addImage(imgData, 'PNG', 0, 30, pdfWidth, pdfHeight);
+            // Adicionar primeira página
+            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= (pageHeight - position);
+
+            // Adicionar páginas adicionais se necessário
+            while (heightLeft > 0) {
+                position = heightLeft - pdfHeight;
+                doc.addPage();
+                doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+            }
             
             resultadoElement.style.display = originalDisplay; // Restaura o display original
 
