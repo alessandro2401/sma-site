@@ -483,6 +483,8 @@
                     valorParticipacao: dadosEntrada.valor_participacao || 0,
                     orcamentoOficina: dadosEntrada.orcamento_oficina || 0,
                     valorContraproposta: dadosEntrada.contraproposta || 0,
+                    valorMinimoContraproposta: resultado.validacao_contraproposta?.limiteMin || 0,
+                    valorMaximoContraproposta: resultado.validacao_contraproposta?.limiteMax || 0,
                     diasReparacao: dadosEntrada.dias_reparo || 0,
                     diasCarroReserva: dadosEntrada.dias_carro_reserva || 0,
                     valorCarroReserva: (dadosEntrada.dias_carro_reserva || 0) * 75,
